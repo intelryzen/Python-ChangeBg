@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # 동영상 파일 경로 설정
-video_path = 'iv1.mov'
+video_path = '디지영 프로젝트 영상/iv1.mov'
 
 # 비디오 캡처 객체 생성
 cap = cv2.VideoCapture(video_path)
@@ -30,8 +30,7 @@ while cap.isOpened():
     
     fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)
 
-    # 결과 출력
-    cv2.imshow('Original', frame)
+   
     cv2.imshow('Foreground Mask', fgmask)
 
     # q 키를 누르면 종료
