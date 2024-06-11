@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # 동영상 파일 경로 설정
-video_path = '디지영 프로젝트 영상/iv1.mov'
+video_path = '디지영 프로젝트 영상/iv2.mov'
 
 # 비디오 캡처 객체 생성
 cap = cv2.VideoCapture(video_path)
@@ -105,6 +105,9 @@ while cap.isOpened():
 
     masked_image = cv2.erode(masked_image, kernel, iterations=15)
     ret, binary_image = cv2.threshold(masked_image, 0, 255, cv2.THRESH_BINARY)
+
+
+
     # # 현재 프레임을 그레이스케일로 변환
     # gray = cv2.cvtColor(masked_image, cv2.COLOR_BGR2GRAY)
 
@@ -114,17 +117,41 @@ while cap.isOpened():
 
     # # 마스크가 적용된 이미지에 Otsu 이진화 적용
     # gray_masked = cv2.cvtColor(masked_image, cv2.COLOR_BGR2GRAY)  # 그레이스케일로 변환
-    # ret, otsu_result = cv2.threshold(gray_masked, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # # 결과 이미지 출력
     # cv2.imshow('Otsu Thresholding', otsu_result)
-    masked_image = cv2.bitwise_and(frame, frame, mask=binary_image)
+    final_image = cv2.bitwise_and(frame, frame, mask=binary_image)
+
+    color = cv2.bitwise_and(frame, frame, mask=binary_image)
+    gray = cv2.equalizeHist(cv2.cvtColor(color, cv2.COLOR_BGR2GRAY))
+
+    ret, otsu_result = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    edges = cv2.Canny(gray, 100, 250)
+    inverted_image = cv2.bitwise_not(edges)
+
+    # 윤곽선 찾기
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # 윤곽선 그리기 (채움 포함)
+    output_image = np.zeros((height, width), dtype=np.uint8) # 검은색 배경 이미지 생성
+    cv2.drawContours(output_image, contours, -1, (255), thickness=cv2.FILLED)  # 모든 윤곽선을 흰색으로 채움
+
+    final_image = cv2.bitwise_or(otsu_result, otsu_result, mask=inverted_image)
+    
     out.write(masked_image)
 
+ # 배경 차분을 통한 포그라운드 마스크 생성
+    fgmask = fgbg.apply(cv2.cvtColor(color, cv2.COLOR_BGR2GRAY))
+    final_image = cv2.bitwise_and(fgmask, edges)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    fgmask = cv2.dilate(fgmask, kernel, iterations=4)
+    fgmask = cv2.erode(fgmask, kernel, iterations=1)
 
     # 결과 출력
     # cv2.imshow('Final Mask', final_mask)
-    cv2.imshow('Person', masked_image)
+    cv2.imshow('Person', fgmask)
 
     # q 키를 누르면 종료
     if cv2.waitKey(30) & 0xFF == ord('q'):
