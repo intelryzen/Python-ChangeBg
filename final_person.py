@@ -16,6 +16,24 @@ frame_width = int(cap.get(3))
 frame_height = int(cap.get(4))
 out = cv2.VideoWriter('output.mp4', fourcc, 30.0, (frame_width, frame_height))
 
+def filter_skin_and_black(image):
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    
+    lower_skin = np.array([0, 50, 60], dtype=np.uint8)
+    upper_skin = np.array([20, 150, 255], dtype=np.uint8)
+    
+    lower_black = np.array([0, 0, 0], dtype=np.uint8)
+    upper_black = np.array([180, 255, 50], dtype=np.uint8)
+    
+    mask_skin = cv2.inRange(hsv, lower_skin, upper_skin)
+    mask_black = cv2.inRange(hsv, lower_black, upper_black)
+    
+    mask_or = cv2.bitwise_or(mask_skin, mask_black)
+    
+    result = cv2.bitwise_and(image, image, mask=mask_or)
+    
+    return result
+
 
 # 동영상 프레임 처리
 while cap.isOpened():
@@ -101,6 +119,7 @@ while cap.isOpened():
     masked_image = cv2.bitwise_and(fgmask, fgmask, mask=binary_image)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
     masked_image = cv2.dilate(masked_image, kernel, iterations=15)
+    
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
     masked_image = cv2.erode(masked_image, kernel, iterations=15)
@@ -140,18 +159,28 @@ while cap.isOpened():
     final_image = cv2.bitwise_or(otsu_result, otsu_result, mask=inverted_image)
     
     out.write(masked_image)
+    color = filter_skin_and_black(color)
+
+    gray = cv2.cvtColor(color, cv2.COLOR_HSV2BGR)
+    gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
+    _, binary_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)
+    
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+
+    kernel = np.ones((5, 5), np.uint8)
+    result = cv2.morphologyEx(binary_image, cv2.MORPH_CLOSE, kernel)
 
  # 배경 차분을 통한 포그라운드 마스크 생성
-    fgmask = fgbg.apply(cv2.cvtColor(color, cv2.COLOR_BGR2GRAY))
-    final_image = cv2.bitwise_and(fgmask, edges)
+    # fgmask = fgbg.apply(cv2.cvtColor(color, cv2.COLOR_BGR2GRAY))
+    # final_image = cv2.bitwise_and(fgmask, edges)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    fgmask = cv2.dilate(fgmask, kernel, iterations=4)
-    fgmask = cv2.erode(fgmask, kernel, iterations=1)
+    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    # fgmask = cv2.dilate(fgmask, kernel, iterations=4)
+    # fgmask = cv2.erode(fgmask, kernel, iterations=1)
 
     # 결과 출력
     # cv2.imshow('Final Mask', final_mask)
-    cv2.imshow('Person', fgmask)
+    cv2.imshow('Person', color)
 
     # q 키를 누르면 종료
     if cv2.waitKey(30) & 0xFF == ord('q'):

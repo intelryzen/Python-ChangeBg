@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # 동영상 파일 경로 설정
-video_path = '디지영 프로젝트 영상/iv1.mov'
+video_path = '디지영 프로젝트 영상/iv7.mov'
 
 # 비디오 캡처 객체 생성
 cap = cv2.VideoCapture(video_path)
@@ -32,7 +32,7 @@ while cap.isOpened():
     fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)
 
     # 배경 차분을 통한 엣지 감지
-    edges2 = cv2.Canny(fgmask, 1, 10)
+    edges2 = cv2.Canny(fgmask, 1, 10, apertureSize=3)
 
     # 윤곽선 찾기
     contours, _ = cv2.findContours(edges2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
