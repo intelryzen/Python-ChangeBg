@@ -44,8 +44,8 @@ while cap.isOpened():
     # Connected Components
     num_labels, labels_im = cv2.connectedComponents(fgmask)
     if num_labels > 1:
-        component_sizes = np.bincount(labels_im.flatten())[1:]  # Skip the background
-        largest_component = np.argmax(component_sizes) + 1  # Adjust for background
+        component_sizes = np.bincount(labels_im.flatten())[1:]  
+        largest_component = np.argmax(component_sizes) + 1  
         person_mask = np.uint8(labels_im == largest_component) * 255
 
         # Isolate the person using the mask
